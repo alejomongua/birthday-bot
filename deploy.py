@@ -112,7 +112,8 @@ def create_scheduler():
         '--schedule "0 8 * * *" '
         '--topic birthday-reminder '
         '--message-body "Check birthdays" '
-        '--time-zone "America/Bogota"'
+        '--time-zone "America/Bogota" '
+        '--location us-central1'
     )
     
     try:
@@ -125,7 +126,8 @@ def create_scheduler():
             '--schedule "0 8 * * *" '
             '--topic birthday-reminder '
             '--message-body "Check birthdays" '
-            '--time-zone "America/Bogota"'
+            '--time-zone "America/Bogota" '
+            '--location us-central1'
         )
         try:
             subprocess.run(update_command, shell=True, check=True)

@@ -63,9 +63,15 @@ El script automáticamente:
 - Crea una carpeta temporal para el deploy
 - Lee las credenciales de service-account.json
 - Configura todas las variables de entorno necesarias
-- Despliega la función en Google Cloud Functions
-- Configura un Cloud Scheduler para ejecución diaria a las 8:00 AM
+- Crea o actualiza la función en Google Cloud Functions (si ya existe una función con el mismo nombre, la actualiza)
+- Crea o actualiza el topic de Pub/Sub
+- Configura o actualiza un Cloud Scheduler para ejecución diaria a las 8:00 AM
 - Limpia los archivos temporales
+
+Nota: Puedes ejecutar el script múltiples veces para actualizar la función. El script:
+- Actualizará la función existente si ya existe
+- Reutilizará el topic de Pub/Sub si ya existe
+- Actualizará el Cloud Scheduler job si ya existe
 
 ## Estructura de Google Sheets
 
