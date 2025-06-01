@@ -3,3 +3,9 @@ venv
 credentials.json
 token.json
 token_gmail.json
+*.log
+service-account.json
+deploy_tmp/
+
+__pycache__
+*.py[cod]

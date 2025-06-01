@@ -1,85 +1,89 @@
-# 🎂 Bot de Correos de Cumpleaños
+# Birthday Reminder Bot
 
-Un bot automatizado en Python que envía correos electrónicos personalizados de cumpleaños a contactos desde una hoja de cálculo de Google utilizando la API de Gmail y mensajes generados por IA.
+Bot que envía automáticamente mensajes de cumpleaños personalizados usando Google Sheets, Gmail y Gemini.
 
-## Características
+## Configuración Local
 
-- 🔄 Verificaciones diarias de cumpleaños en una hoja de Google
-- 🤖 Mensajes personalizados de cumpleaños generados por IA usando Google Gemini
-- ✉️ Envío automatizado de correos a través de la API de Gmail
-- 🔐 Autenticación segura OAuth2 con servicios de Google
+1. Crea un proyecto en Google Cloud Console y habilita las siguientes APIs:
+   - Google Sheets API
+   - Gmail API
 
-## Requisitos Previos
+2. Crea credenciales OAuth2:
+   - Ve a "APIs & Services > Credentials"
+   - Crea un "OAuth 2.0 Client ID"
+   - Descarga el archivo JSON y guárdalo como `credentials.json` en la raíz del proyecto
 
-- Python 3.7+
-- Cuenta de Google con acceso a Sheets y Gmail
-- Clave API de Gemini (desde Google AI Studio)
-- Proyecto de Google Cloud con APIs de Sheets y Gmail habilitadas
+3. Crea un archivo `.env` con las siguientes variables:
+   ```
+   SPREADSHEET_ID=tu_id_de_hoja_de_calculo
+   YOUR_EMAIL=tu_correo@gmail.com
+   GEMINI_API_KEY=tu_api_key_de_gemini
+   ```
 
-## Instrucciones de Configuración
-
-1. **Clona el repositorio**
-
-2. **Crea un entorno virtual e instala las dependencias**
+4. Instala las dependencias:
    ```bash
-   python -m venv venv
-   venv\Scripts\activate  # En Windows
-   # source venv/bin/activate  # En macOS/Linux
    pip install -r requirements.txt
    ```
 
-3. **Configura el Proyecto de Google Cloud**
-   - Crea un proyecto en la [Consola de Google Cloud](https://console.cloud.google.com/)
-   - Habilita las APIs de Google Sheets y Gmail
-   - Crea credenciales OAuth (tipo aplicación de escritorio)
-   - Descarga las credenciales como `credentials.json` y colócalas en la raíz del proyecto
+5. Ejecuta el bot:
+   ```bash
+   python main.py
+   ```
 
-4. **Configura las variables de entorno**
-   - Copia el archivo `.env.example` a `.env`
-   - Rellena con tu ID de hoja de cálculo, clave API de Gemini y dirección de Gmail
+## Configuración en Google Cloud Functions
 
-5. **Primera autenticación**
-   - Ejecuta el script una vez para autenticarte con Google
-   - Esto abrirá ventanas del navegador para confirmar el acceso
-   - Los tokens de autenticación se guardarán para uso futuro
+1. Crea una cuenta de servicio en Google Cloud Console:
+   - Ve a IAM & Admin > Service Accounts
+   - Crea una nueva cuenta de servicio
+   - Asigna los siguientes roles:
+     * Gmail API > Gmail Send
+     * Google Sheets API > Sheets Viewer
 
-## Configuración
+2. Genera una clave JSON para la cuenta de servicio:
+   - Selecciona la cuenta de servicio creada
+   - Ve a la pestaña "Keys"
+   - Click en "Add Key" > "Create New Key"
+   - Selecciona formato JSON
+   - Guarda el archivo como `service-account.json` en la raíz del proyecto
+   (No te preocupes, este archivo está en .gitignore)
 
-Edita el archivo `.env`:
+3. Configura el archivo .env con las variables necesarias:
+   ```
+   SPREADSHEET_ID=tu_id_de_hoja_de_calculo
+   YOUR_EMAIL=tu_correo@gmail.com
+   GEMINI_API_KEY=tu_api_key_de_gemini
+   ```
 
-```
-SPREADSHEET_ID="tu_id_de_hoja_de_google"
-GEMINI_API_KEY="tu_clave_api_de_gemini"
-YOUR_EMAIL="tu_direccion_de_gmail"
-```
+4. Ejecuta el script de deploy:
+   ```bash
+   python deploy.py
+   ```
 
-## Formato de la Hoja de Google
+El script automáticamente:
+- Crea una carpeta temporal para el deploy
+- Lee las credenciales de service-account.json
+- Configura todas las variables de entorno necesarias
+- Despliega la función en Google Cloud Functions
+- Configura un Cloud Scheduler para ejecución diaria a las 8:00 AM
+- Limpia los archivos temporales
 
-Tu hoja de Google debe tener estas columnas:
-- `nombre` - Nombre de la persona
-- `parentezco` - Parentezco con la persona
-- `fecha de nacimiento` - Fecha de nacimiento (formato: YYYY/MM/DD)
-- `correo electrónico` - Dirección de correo electrónico
+## Estructura de Google Sheets
 
-El nombre de la hoja debe ser "Hoja1" (sin espacios). Por defecto el nombre viene con espacio, así que hay que cambiarlo
+La hoja de cálculo debe tener las siguientes columnas:
+- nombre
+- correo electrónico
+- fecha de nacimiento (formato: YYYY/MM/DD o MM/DD)
+- parentezco
 
-## Uso
+## Configuración de Logging
 
-Ejecuta el script diariamente para verificar y enviar correos de cumpleaños:
+- Por defecto, el nivel de logging es INFO
+- Puedes cambiar el nivel usando la variable de entorno LOG_LEVEL
+- En Cloud Functions, los logs se envían automáticamente a Cloud Logging
+- En local, además de la consola se genera un archivo birthday_bot.log
 
-```bash
-python main.py
-```
+## Estructura del Código
 
-Para ejecución automatizada, considera configurar un cron job (Linux/Mac) o el Programador de tareas (Windows).
-
-## Notas de Seguridad
-
-- Nunca subas tus archivos de credenciales al control de versiones
-- El archivo `.gitignore` excluye archivos sensibles
-- Esta aplicación solicita permisos mínimos (solo lectura para Sheets, solo envío para Gmail)
-- Los tokens se almacenan localmente en `token.json` y `token_gmail.json`
-
-## Licencia
-
-MIT
+- `main.py`: Ejecución local con autenticación OAuth2
+- `gcf.py`: Código para Google Cloud Functions con autenticación de cuenta de servicio
+- `utils.py`: Funcionalidad común compartida entre ambos entornos
