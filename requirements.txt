@@ -3,6 +3,7 @@ google-auth-httplib2
 google-auth-oauthlib
 google-cloud-functions
 google-cloud-pubsub
+google-cloud-secret-manager
 functions-framework
 pandas
 python-dotenv

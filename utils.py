@@ -3,7 +3,8 @@ import datetime
 import base64
 import logging
 import pandas as pd
-from email.message import EmailMessage
+from email.mime.text import MIMEText
+from base64 import urlsafe_b64encode
 import google.generativeai as genai
 
 class Config:
@@ -94,30 +95,40 @@ def read_sheet_data(service, config):
         return pd.DataFrame()
 
 def send_birthday_email(service, to_email, subject, message_body, from_email):
-    """Envía correo usando Gmail API."""
-    email_msg = EmailMessage()
-    email_msg.set_content(message_body)
-    email_msg['To'] = to_email
-    email_msg['From'] = from_email
-    email_msg['Subject'] = subject
+    """Envía correo usando Gmail API con OAuth."""
+    message = MIMEText(message_body)
+    message['to'] = to_email
+    message['from'] = from_email
+    message['subject'] = subject
 
-    raw = base64.urlsafe_b64encode(email_msg.as_bytes()).decode()
-    service.users().messages().send(userId='me', body={'raw': raw}).execute()
-    logging.info(f"Correo enviado a {to_email}")
+    encoded_message = urlsafe_b64encode(message.as_bytes()).decode()
+    
+    try:
+        service.users().messages().send(
+            userId='me',
+            body={'raw': encoded_message}
+        ).execute()
+        logging.info(f"Correo enviado a {to_email}")
+    except Exception as error:
+        logging.error(f'Ocurrió un error al enviar el correo: {error}')
+        raise
 
 def process_birthdays(sheets_service, gmail_service, config, from_email):
     """Procesa los cumpleaños del día y envía los correos."""
+    logging.info("Iniciando procesamiento de cumpleaños")
+    
     df = read_sheet_data(sheets_service, config)
     if df.empty:
         logging.info("No hay datos o error al leer la hoja.")
         return
 
+    logging.info(f"Datos leídos exitosamente de Google Sheets: {len(df)} filas")
     birthdays = get_today_birthdays(df)
     if not birthdays:
         logging.info("No hay cumpleaños hoy.")
         return
 
-    logging.info(f"Hoy hay {len(birthdays)} cumpleaños.")
+    logging.info(f"Hoy hay {len(birthdays)} cumpleaños:")
     for person in birthdays:
         correo = person.get('correo electrónico')
         nombre = person.get('nombre')
