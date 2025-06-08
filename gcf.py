@@ -11,6 +11,7 @@ from utils import (
 )
 
 from google.cloud import secretmanager
+from google.auth.transport.requests import Request
 
 def setup_logging():
     logger = logging.getLogger()       # logger raíz
@@ -49,6 +50,20 @@ def get_google_service(api_name, api_version, scopes):
             'refresh_token': json.loads(refresh_token)['refresh_token'],
             'token_uri': 'https://oauth2.googleapis.com/token'
         }, scopes)
+        # Refrescar el token en cada ejecución si hay refresh_token
+        if creds and creds.refresh_token:
+            creds.refresh(Request())
+            # Guardar el nuevo token en Secret Manager
+            client = secretmanager.SecretManagerServiceClient()
+            parent = f"projects/{os.getenv('PROJECT_ID')}/secrets/gmail-refresh-token"
+            payload = creds.to_json().encode("UTF-8")
+            client.add_secret_version(
+                request={
+                    "parent": parent,
+                    "payload": {"data": payload}
+                }
+            )
+            logging.debug("Token de Gmail actualizado y guardado en Secret Manager")
     else:
         # Para otros servicios usamos service account
         service_account_info = json.loads(get_secret('birthday-reminder-sa'))
